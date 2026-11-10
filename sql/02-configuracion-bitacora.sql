@@ -1,26 +1,39 @@
--- Actividad 6: Cambios de privilegios y estructura
+-- Actividad 4: Configuración de la bitácora
 
--- Revocar permiso de actualización
-REVOKE UPDATE ON clientes FROM soporte_ana;
+ALTER SYSTEM SET log_connections = on;
+ALTER SYSTEM SET log_disconnections = on;
 
--- Conceder permiso de actualización
-GRANT UPDATE ON clientes TO app_ventas;
+ALTER SYSTEM SET log_line_prefix =
+'%m [%p] user=%u db=%d app=%a client=%h ';
 
--- Agregar una columna a la tabla
-ALTER TABLE clientes ADD COLUMN segmento VARCHAR(20);
+ALTER SYSTEM SET log_statement = 'ddl';
 
--- Crear un rol temporal para comprobar la exposición de contraseñas
-CREATE ROLE rol_temporal LOGIN PASSWORD 'Temporal_Practica_2026';
+SELECT pg_reload_conf();
 
--- Eliminar el rol temporal
-DROP ROLE rol_temporal;
+-- Verificar la configuración
+SELECT name, setting, source, sourcefile
+FROM pg_settings
+WHERE name IN (
+    'log_connections',
+    'log_line_prefix',
+    'log_statement'
+);
 
--- Consultar las sentencias registradas
+-- Consultar las últimas líneas de la bitácora
 SELECT num, linea
 FROM dba.bitacora
-WHERE linea ILIKE '%REVOKE%'
-   OR linea ILIKE '%GRANT%'
-   OR linea ILIKE '%ALTER TABLE%'
-   OR linea ILIKE '%CREATE ROLE%'
-   OR linea ILIKE '%DROP ROLE%'
-ORDER BY num;
+ORDER BY num DESC
+LIMIT 6;
+
+-- Buscar mensajes de cambio de parámetros
+SELECT num, linea
+FROM dba.bitacora
+WHERE linea ILIKE '%parameter%'
+ORDER BY num DESC;
+
+-- Consultar conexiones registradas
+SELECT num, linea
+FROM dba.bitacora
+WHERE linea ILIKE '%conexión%'
+ORDER BY num DESC
+LIMIT 10;
